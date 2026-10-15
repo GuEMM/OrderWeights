@@ -55,8 +55,8 @@ The notebook also checks, in code, the closed forms and the numbers quoted in th
 Requires Python 3.10 or later.
 
 ```bash
-git clone <this repository>
-cd order-weights
+git clone https://github.com/GuEMM/OrderWeights.git
+cd OrderWeights
 python -m venv .venv && source .venv/bin/activate     # optional
 pip install -r requirements.txt
 jupyter lab notebooks/reproduce_figures_and_tables.ipynb
