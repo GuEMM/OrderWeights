@@ -1,0 +1,5 @@
+distribution,weight,directions,sum_rho2,rho2_values,list
+dyadic,2,6,3.0,[np.float64(0.5)],"012, 032, 120, 201, 203, 320"
+dyadic,3,20,4.0,"[np.float64(0.125), np.float64(0.25)]",
+triadic,2,3,3.0,[np.float64(1.0)],"022, 202, 220"
+triadic,3,8,4.0,[np.float64(0.5)],"111, 113, 131, 133, 311, 313, 331, 333"
