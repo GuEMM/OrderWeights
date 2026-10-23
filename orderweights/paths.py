@@ -1,10 +1,12 @@
 """O-information along two paths from the uniform distribution U (main text Sec.
-'Paths from independence', Fig. 'mixing'; SI Sec. 'Maximum-entropy versus linear-mixing paths').
+'Synergy created by mixing regimes', Fig. 'mixing'; SI Sec. 'Linear-mixing and maximum-entropy paths').
 
   - linear mixture   P_eps = (1 - eps) U + eps P_target
   - pairwise MaxEnt  the maximum-entropy distribution with the pairwise marginals of P_eps.
     For the target COPY it is the ferromagnetic Potts model P_J ~ exp[J sum_{i<j} delta(x_i, x_j)],
-    with J fixed by P_J(x_1 = x_2) = 1/q + eps (1 - 1/q).
+    with J fixed by P_J(x_1 = x_2) = 1/q + eps (1 - 1/q). For independent variables biased by a
+    common field (field_paths) it is the Ising model with a uniform field and a uniform coupling.
+    For two independent copies it is the product of the two pairs.
 
 The variations are computed from delta^n Omega = (-1)^(n-1)/(n(n-1)) sum_a c_a E_U[rho_a^n]
 (Methods, Eq. nth-rho). All quantities are exact, by enumeration of the q^N states.
@@ -14,7 +16,7 @@ from math import comb, log
 
 import numpy as np
 
-__all__ = ["copy_paths", "two_copies_paths", "A_m"]
+__all__ = ["copy_paths", "two_copies_paths", "field_paths", "fit_maxent", "A_m"]
 
 
 def A_m(m, q):
@@ -114,3 +116,66 @@ def two_copies_paths(n=260, eps_min=1e-3):
     assert np.allclose(out[0]["o23"] * lnq, -eps ** 2 + 2 * eps ** 3)
     assert np.abs(out[1]["y"]).max() < 1e-12
     return out
+
+
+def fit_maxent(features, target, theta0=None, tol=1e-12, max_iter=100):
+    """Maximum-entropy distribution P ~ exp(theta . features) over the enumerated states with
+    E_P[features] = target. Newton's method on the convex dual, log Z(theta) - theta . target,
+    whose gradient is E_P[features] - target and whose Hessian is the covariance of the features,
+    with step halving; it converges quadratically and needs no tolerance tuning."""
+    F = np.asarray(features, dtype=float)               # shape (n_states, n_features)
+    t = np.asarray(target, dtype=float)
+    theta = np.zeros(F.shape[1]) if theta0 is None else np.array(theta0, dtype=float)
+
+    def dual(th):
+        a = F @ th; amax = a.max(); w = np.exp(a - amax)
+        return amax + np.log(w.sum()) - th @ t, w / w.sum()
+
+    D, P = dual(theta)
+    for _ in range(max_iter):
+        mean = P @ F
+        grad = mean - t
+        if np.abs(grad).max() < tol:
+            return theta, P
+        cov = (F - mean).T @ ((F - mean) * P[:, None])
+        step = np.linalg.solve(cov, grad)
+        lam = 1.0
+        while True:                                     # step halving keeps the dual decreasing
+            D_new, P_new = dual(theta - lam * step)
+            if D_new <= D + 1e-15 or lam < 1e-10:
+                break
+            lam /= 2
+        theta, D, P = theta - lam * step, D_new, P_new
+    raise RuntimeError(f"maximum-entropy fit did not converge: |grad| = {np.abs(grad).max():.1e}")
+
+
+def field_paths(N, p, n=260, eps_min=1e-3):
+    """Mixture of U with independent Boolean variables biased by a common field,
+    Q_p(x) = prod_i p^{x_i} (1 - p)^{1 - x_i}, and the pairwise MaxEnt path, the Ising model
+    P ~ exp[h sum_i s_i + J sum_{i<j} s_i s_j] (s_i = 1 - 2 x_i) with the magnetization and the
+    pair correlation of the mixture. Omega / ln 2 along both; both regimes are independent.
+    Near U, Omega = (eps^2 / 2) sum_{m >= 3} (2 - m) C(N, m) mu^(2m) + O(eps^3), mu = 1 - 2p
+    (Proposition 'mixture': the target has a component mu^|S| on every subset S)."""
+    s = _setup(N, 2)
+    lnq = log(2)
+    X = np.array(list(it.product(range(2), repeat=N)))
+    k = X.sum(1)
+    Q = p ** k * (1 - p) ** (N - k)
+    M = (N - 2 * k).astype(float)                 # sum_i s_i
+    Epair = (M ** 2 - N) / 2                      # sum_{i<j} s_i s_j
+    mu = 1 - 2 * p
+    eps = np.logspace(np.log10(eps_min), 0, n)
+    mix = dict(eps=eps, y=np.array([s["omega"]((1 - e) * s["U"] + e * Q) for e in eps]) / lnq)
+    d2, d3 = s["term"](Q, 2) / lnq, s["term"](Q, 3) / lnq
+    assert np.isclose(d2 * lnq, 0.5 * sum((2 - m) * comb(N, m) * mu ** (2 * m) for m in range(3, N + 1)))
+    mix.update(o2=d2 * eps ** 2, o23=d2 * eps ** 2 + d3 * eps ** 3,
+               radius=1 / ((2 * max(p, 1 - p)) ** N - 1))
+    # MaxEnt: match <sum_i s_i> = N eps mu and <sum_{i<j} s_i s_j> = C(N, 2) eps mu^2 (those of the mixture)
+    features = np.column_stack([M, Epair])
+    yME, theta = [], np.zeros(2)
+    for e in eps[eps < 1]:
+        target = np.array([N * e * mu, comb(N, 2) * e * mu ** 2])
+        theta, P = fit_maxent(features, target, theta0=theta)
+        yME.append(s["omega"](P) / lnq)
+    me = dict(eps=eps[eps < 1], y=np.array(yME))
+    return mix, me

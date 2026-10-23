@@ -108,7 +108,7 @@ def omega_saturation(N, q, T):
 
 # ---------------------------------------------------------------- temporal correlations
 def simulate_autocorrelated(N, T, s, R, rng):
-    """Plug-in estimates of (Omega, Sigma, II) for N independent binary variables, each keeping
+    """Plug-in estimates of (Omega, Sigma, coI) for N independent binary variables, each keeping
     its previous value with probability s and otherwise drawn anew (SI, Table S-autocorr).
     Same algorithm and random stream as the script that produced the table."""
     subsets = [a for k in range(1, N + 1) for a in it.combinations(range(N), k)]

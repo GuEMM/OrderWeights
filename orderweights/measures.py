@@ -16,7 +16,7 @@ from fractions import Fraction as F
 from math import comb, log
 
 __all__ = ["order_weights", "coefficients", "c_measure", "coeffs", "c_u", "c_TSE",
-           "c_phiSR", "c_binomial", "hallmark_values", "hallmark_scale", "cost", "LABEL"]
+           "c_omega_star", "c_phiSR", "hallmark_values", "hallmark_scale", "cost", "LABEL"]
 
 
 def order_weights(c, m_max=None):
@@ -56,15 +56,13 @@ def c_u(N, k):
     return c
 
 
-def c_phiSR(N):
-    """Least biased valid synergy-redundancy index, phi^SR = u_1 - u_{N-1} (main text, Eq. phi-SR)."""
+def c_omega_star(N):
+    """Least biased valid measure of synergy-redundancy balance, Omega* = u_1 - u_{N-1}
+    (main text, Eq. phi-SR)."""
     return [x - y for x, y in zip(c_u(N, 1), c_u(N, N - 1))]
 
 
-def c_binomial(N, d):
-    """Member d of the family lambda_m = (-1)^d C(m-2, d) (Methods, Eq. binomial-family)."""
-    lam = [F(0)] + [F((-1) ** d * comb(m - 2, d)) for m in range(2, N + 1)]
-    return coefficients(lam)
+c_phiSR = c_omega_star            # former name, kept for compatibility
 
 
 def c_measure(name, N, k=None):
@@ -78,7 +76,7 @@ def c_measure(name, N, k=None):
         c[0] += 1; c[N - 2] += -1; c[N - 1] += N - 2
     elif name == "Sigma":
         c[0] += 1; c[N - 2] += 1; c[N - 1] += -N
-    elif name == "II":
+    elif name == "coI":            # co-information of all N variables
         c = [F(-(-1) ** j) for j in range(1, N + 1)]
     elif name == "TSE":
         c = c_TSE(N)
@@ -90,14 +88,14 @@ def c_measure(name, N, k=None):
 
 
 def coeffs(name, N):
-    """Like c_measure, but also accepts 'phiSR'."""
-    if name == "phiSR":
-        return c_phiSR(N)
+    """Like c_measure, but also accepts 'OmegaStar' (former name 'phiSR')."""
+    if name in ("OmegaStar", "phiSR"):
+        return c_omega_star(N)
     return c_measure(name, N)
 
 
-LABEL = {"Omega": r"$\Omega$", "Sigma": r"$\Sigma$", "II": "II", "TC": "TC", "DTC": "DTC",
-         "TSE": "TSE", "phiSR": r"$\phi^{SR}$"}
+LABEL = {"Omega": r"$\Omega$", "Sigma": r"$\Sigma$", "coI": "coI", "TC": "TC", "DTC": "DTC",
+         "TSE": "TSE", "OmegaStar": r"$\Omega^{*}$"}
 
 
 def hallmark_values(c):
@@ -115,6 +113,7 @@ def hallmark_scale(c, q):
 
 
 def cost(c):
-    """Number of subset entropies needed: all subsets of the sizes with c_k != 0."""
+    """Number of subset entropies needed: all subsets of the sizes with c_k != 0
+    (main text, Proposition on the cheapest measure)."""
     N = len(c)
     return sum(comb(N, k) for k in range(1, N + 1) if c[k - 1] != 0)

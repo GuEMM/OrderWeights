@@ -68,7 +68,7 @@ def simulate(N, T, R, names, rng):
 
 
 def correlated_check(N=6, T=30, R=20000, seeds=(1, 2, 3),
-                     names=("TC", "DTC", "Sigma", "Omega", "II")):
+                     names=("TC", "DTC", "Sigma", "Omega", "coI")):
     """The exact mean holds for correlated Gaussians too (SI, 'Numerical check').
     Covariance C = A A^T + 0.05 I with A a random Gaussian matrix. Returns a list of rows."""
     cs = {m: [float(x) for x in coeffs(m, N)] for m in names}
