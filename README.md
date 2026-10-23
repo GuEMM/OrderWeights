@@ -4,7 +4,7 @@ Code to reproduce the figures and tables of
 
 > G. Menesse and H. J. Jensen, *What measures of high-order interdependence count: order weights, local geometry and sampling bias* (2026).
 
-Every labeling-symmetric Shannon measure of interdependence (total correlation, dual total correlation, O- and S-information, TSE complexity, co-information, …) is a weighted sum of the co-informations of all subsets of variables, with one weight per subset size. These *order weights* fix what a measure counts, how it responds to weak interdependence, and how finite samples bias its estimates. This repository contains the code behind every computed figure and table of the paper.
+Every labeling-symmetric Shannon measure of multivariate interdependence (total correlation, dual total correlation, O- and S-information, TSE complexity, co-information, …) admits an order-weight decomposition, a weighted sum of the interdependences (interaction informations) of all subsets of variables, with one weight per subset size. These order weights fix what a measure quantifies, how it responds to statistical structure, and how finite samples bias its estimates. This repository contains the code behind every computed figure and table of the paper.
 
 ## Contents
 
