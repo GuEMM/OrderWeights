@@ -1,4 +1,4 @@
-# What measures of high-order interdependence count
+# Order-weight decomposition unifies the interpretation, response and sampling bias of multivariate information measures
 
 Code to reproduce the figures and tables of
 
